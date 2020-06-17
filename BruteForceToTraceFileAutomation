@@ -23,11 +23,12 @@ read WHICH
 
 WORKDIR=Failed_${OS}_$(date +%H%M%S)
 mkdir $WORKDIR
+cd $WORKDIR 
 
 for i in $(seq 1 $ITERATIONS)
         do
                 echo "---------- start tcpdump #$i ------------"
-                sudo tcpdump -i eth0 host $SRC_IP and host $DST_IP -w $WORKDIR/${WHICH}_${PROT}_${OS}_${i}_$(date +"%T" | sed -e "s/:/-/g").pcap & ttempid=$!
+                sudo tcpdump -i eth0 host $SRC_IP and host $DST_IP -w ${WHICH}_${PROT}_${OS}_${i}_$(date +"%T" | sed -e "s/:/-/g").pcap & ttempid=$!
                 echo "********** tcpdump PID $ttempid ********"
                 case $WHICH in
                         "Hydra")
